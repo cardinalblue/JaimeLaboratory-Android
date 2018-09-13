@@ -35,15 +35,11 @@ class Observator<T>(defaultValue: T) {
     }
 }
 
-@Target(AnnotationTarget.PROPERTY)
-annotation class Observable() {
-
-
-}
-
 fun <R> KProperty0<R>.observable(): Observable<R>? {
     isAccessible = true
-    val delegate = this.getDelegate() as? Observator<R>
-    return delegate?.observable() as? Observable<R>
+    val observator = this.getDelegate() as? Observator<R>
+    return observator?.observable() as? Observable<R>
 }
+
+
 
