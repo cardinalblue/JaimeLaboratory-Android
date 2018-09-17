@@ -7,8 +7,8 @@ class ObservableSetUnitTest {
 
     @Test
     fun `constructs`() {
-        ObservableSet<Int>()
-        ObservableSet(listOf(1, 2, 3))
+        assertNotNull(ObservableSet<Int>().added)
+        assertNotNull(ObservableSet(listOf(1, 2, 3)).removed)
     }
 
     @Test
@@ -22,19 +22,19 @@ class ObservableSetUnitTest {
         added.assertNoValues()
         removed.assertNoValues()
 
-        m.add(4)
+        assert(m.add(4))
         assertArrayEquals(arrayOf(1, 2, 3, 4), m.toArray())
         added.assertValues(4)
         removed.assertNoValues()
 
-        m.add(5)
+        assert(m.add(5))
         assertArrayEquals(arrayOf(1, 2, 3, 4, 5), m.toArray())
         added.assertValues(4, 5)
         removed.assertNoValues()
 
-        m.add(6)
-        m.remove(2)
-        m.remove(8)
+        assert(m.add(6))
+        assert(m.remove(2))
+        assertFalse(m.remove(8))
         assertArrayEquals(arrayOf(1, 3, 4, 5, 6), m.toArray())
         added.assertValues(4, 5, 6)
         removed.assertValues(2)
@@ -45,14 +45,14 @@ class ObservableSetUnitTest {
         removed.assertValues(2, 1, 3, 4, 5, 6)
 
         // addAll
-        m.addAll(listOf(7, 8, 9))
+        assert(m.addAll(listOf(7, 8, 9)))
         assertArrayEquals(arrayOf(7, 8, 9), m.toArray())
         added.assertValues(4, 5, 6, 7, 8, 9)
         removed.assertValues(2, 1, 3, 4, 5, 6)
 
         // Repeat `add`
-        m.add(7)
-        m.addAll(listOf(8))
+        assertFalse(m.add(7))
+        assertFalse(m.addAll(listOf(8)))
         assertArrayEquals(arrayOf(7, 8, 9), m.toArray())
         added.assertValues(4, 5, 6, 7, 8, 9)
         removed.assertValues(2, 1, 3, 4, 5, 6)
