@@ -1,0 +1,2 @@
+- Fix Android Gradle Plugin version issue:
+    - Edit `build.gradle`, the `ext.kotlin_version = ...`
