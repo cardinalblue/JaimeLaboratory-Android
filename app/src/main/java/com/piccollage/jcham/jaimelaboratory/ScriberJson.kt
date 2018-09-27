@@ -1,12 +1,21 @@
 package com.piccollage.jcham.jaimelaboratory
 
+fun <T> MutableList<T>.removeLast(): T {
+    val i = count() - 1
+    val last: T = elementAt(i)
+    removeAt(i)
+    return last
+}
+typealias JsonMap = MutableMap<String, Any?>
 class JsonScribeWriter: IScribeWriter {
-    val result = HashMap<String, Any?>()
+    val result
+        get() = resultStack.last()
+    private val resultStack = mutableListOf<JsonMap>(HashMap<String, Any?>())
 
-    private fun extract(s: IScribeable?): JsonScribeWriter {
-        val scriber = JsonScribeWriter()
-        s?.scribe(scriber)
-        return scriber
+    private fun extract(s: IScribeable?): JsonMap {
+        resultStack.add(HashMap<String, Any?>())
+        s?.scribe(this)
+        return resultStack.removeLast()
     }
 
     override fun write(key: String, value: Int?)        : IScribeWriter {
@@ -18,16 +27,16 @@ class JsonScribeWriter: IScribeWriter {
     override fun write(key: String, value: Boolean?)    : IScribeWriter {
         result[key] = value; return this }
     override fun write(key: String, value: IScribeable?): IScribeWriter {
-        result[key] = if (value != null) extract(value).result
+        result[key] = if (value != null) extract(value)
         else null
         return this
     }
     override fun write(key: String, value: List<IScribeable?>?): IScribeWriter {
-        result[key] = value?.map { extract(it).result }
+        result[key] = value?.map { extract(it) }
         return this
     }
     override fun write(key: String, value: Map<String, IScribeable?>?): IScribeWriter {
-        result[key] = value?.mapValues { extract(it.value).result }
+        result[key] = value?.mapValues { extract(it.value) }
         return this
     }
 }
@@ -57,4 +66,5 @@ class JsonScribeReader(val json: Map<String, Any?>): IScribeReader {
         val map = json[key] as? Map<String, Any>
         return map?.mapValues { e -> extract(e.value, scribeable) }
     }
+
 }
