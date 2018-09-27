@@ -1,7 +1,6 @@
 package com.piccollage.jcham.jaimelaboratory
 
-import android.os.Parcel
-import android.os.Parcelable
+import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 
 class ObservableSet<E>(elements: Collection<E>) : HashSet<E>(elements) {
@@ -13,17 +12,23 @@ class ObservableSet<E>(elements: Collection<E>) : HashSet<E>(elements) {
         // but the base class constructor calls `add`, `remove`, etc.
         // so we need to be able to detect if we haven't been initialized yet.
 
-    val added: PublishSubject<E> by lazy {
+    val added:   Observable<E> get() { return _added.hide() }
+    val removed: Observable<E> get() { return _removed.hide() }
+
+    private
+    val _added: PublishSubject<E> by lazy {
         PublishSubject.create<E>()
     }
-    val removed: PublishSubject<E> by lazy {
+
+    private
+    val _removed: PublishSubject<E> by lazy {
         PublishSubject.create<E>()
     }
 
     override fun add(element: E): Boolean {
         if (super.add(element)) {
             if (initialized) {
-                added.onNext(element)
+                _added.onNext(element)
             }
             return true
         }
@@ -34,14 +39,14 @@ class ObservableSet<E>(elements: Collection<E>) : HashSet<E>(elements) {
         super.clear()
         elements.forEach() {
             if (initialized) {
-                removed.onNext(it)
+                _removed.onNext(it)
             }
         }
     }
     override fun remove(element: E): Boolean {
         if (super.remove(element)) {
             if (initialized) {
-                removed.onNext(element)
+                _removed.onNext(element)
             }
             return true
         }
@@ -53,7 +58,7 @@ class ObservableSet<E>(elements: Collection<E>) : HashSet<E>(elements) {
     //
     //    override fun addAll(elements: Collection<E>): Boolean {
     //        if (super.addAll(elements)) {
-    //            elements.forEach { e -> added.onNext(e) }
+    //            elements.forEach { e -> _added.onNext(e) }
     //            return true
     //        }
     //        return false
@@ -75,7 +80,7 @@ class ObservableSet<E>(elements: Collection<E>) : HashSet<E>(elements) {
     override fun retainAll(retained: Collection<E>): Boolean {
         val removedElements = HashSet(this).apply { this.removeAll(retained) }
         if (super.retainAll(retained)) {
-            removedElements.forEach { removed.onNext(it) }
+            removedElements.forEach { _removed.onNext(it) }
             return true
         }
         return false
