@@ -18,17 +18,17 @@ class ScriberReferenceWriter(val inner: IScribeWriter): IScribeWriter by inner {
         println("write Boolean $value")
         return inner.write(key, value)
         }
-    override fun write(key: String, value: IScribeable?, subwriter: IScribeWriter): IScribeWriter {
+    override fun write(key: String, value: IScribeable?): IScribeWriter {
         println("write $value")
-        return inner.write(key, value, this)
+        return inner.write(key, value)
     }
-    override fun write(key: String, value: List<IScribeable?>?, subwriter: IScribeWriter): IScribeWriter {
+    override fun write(key: String, value: List<IScribeable?>?): IScribeWriter {
         println("write List $value")
-        return inner.write(key, value, this)
+        return inner.write(key, value)
     }
-    override fun write(key: String, value: Map<String, IScribeable?>?, subwriter: IScribeWriter): IScribeWriter {
+    override fun write(key: String, value: Map<String, IScribeable?>?): IScribeWriter {
         println("write Map $value")
-        return inner.write(key, value, this)
+        return inner.write(key, value)
     }
 
 }

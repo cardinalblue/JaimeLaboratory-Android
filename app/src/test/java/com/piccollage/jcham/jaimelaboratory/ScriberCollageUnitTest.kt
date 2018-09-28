@@ -89,7 +89,7 @@ class ScriberCollageUnitTest {
                 )
         c.backgroundScrap = c.scraps[1]
         val json = JsonScribeWriter().apply {
-                       ScriberReferenceWriter(this).write("the collage", c)
+                       /* ScriberReferenceWriter(this). */ write("the collage", c)
                    }.result
         val jsonS = mapOf(
             "the collage" to mapOf(
