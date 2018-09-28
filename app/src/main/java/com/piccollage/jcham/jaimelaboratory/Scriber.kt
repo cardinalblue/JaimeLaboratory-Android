@@ -7,8 +7,8 @@ typealias ScribeableConstructor = (IScribeReader) -> IScribeable?
 
 interface IScribeWriter {
     fun write(key: String, value: IScribeable?)                     : IScribeWriter
-    fun write(key: String, value: List<IScribeable?>?)               : IScribeWriter
-    fun write(key: String, value: Map<String, IScribeable?>?)        : IScribeWriter
+    fun write(key: String, value: List<IScribeable?>?)              : IScribeWriter
+    fun write(key: String, value: Map<String, IScribeable?>?)       : IScribeWriter
     fun write(key: String, value: Int?)                             : IScribeWriter
     fun write(key: String, value: Float?)                           : IScribeWriter
     fun write(key: String, value: String?)                          : IScribeWriter

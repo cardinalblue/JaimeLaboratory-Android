@@ -17,11 +17,11 @@ data class A(
         val a5: Boolean? = null
 ): IScribeable {
     override fun scribe(s: IScribeWriter) {
-        s.write("a1", a1)
-         .write("a2", a2)
-         .write("a3", a3)
-         .write("a4", a4)
-         .write("a5", a5)
+        a1?.let { s.write("a1", it) }
+        a2?.let { s.write("a2", it) }
+        a3?.let { s.write("a3", it) }
+        a4?.let { s.write("a4", it) }
+        a5?.let { s.write("a5", it) }
     }
 }
 fun unscribeA(s: IScribeReader) = A(
@@ -38,15 +38,26 @@ data class B(
         val b3: Map<String, A?>? = null
 ): IScribeable {
     override fun scribe(s: IScribeWriter) {
-        s.write("b1", b1)
-        s.write("b2", b2)
-        s.write("b3", b3)
+        b1?.let { s.write("b1", it) }
+        b2?.let { s.write("b2", it) }
+        b3?.let { s.write("b3", it) }
     }
 }
 fun unscribeB(s: IScribeReader) = B(
         s.read("b1", ::unscribeA) as? A,
         s.read_List("b2", ::unscribeA) as? List<A?>,
         s.read_Map("b3", ::unscribeA) as? Map<String, A?>
+)
+
+data class C(
+        val c1: B? = null
+): IScribeable {
+    override fun scribe(s: IScribeWriter) {
+        s.write("c1", c1)
+    }
+}
+fun unscribeC(s: IScribeReader) = C(
+        s.read("c1", ::unscribeB) as? B
 )
 
 class ScriberUnitTest {
@@ -61,8 +72,7 @@ class ScriberUnitTest {
                             "a1" to 100,
                             "a2" to 200.0f,
                             "a3" to "300",
-                            "a4" to true,
-                            "a5" to null
+                            "a4" to true
                         )
                      )
         )
@@ -82,18 +92,19 @@ class ScriberUnitTest {
         )
         val json = JsonScribeWriter().apply{ write("bbbb", b) }.result
         assertEquals(json,
-                mapOf(
-                    "b" to mapOf(
-                        "b1" to mapOf("a1" to 1000),
-                        "b2" to listOf<Any>(
-                            mapOf("a1" to 2000), mapOf("a1" to 3000)
-                        ),
-                        "b3" to mapOf<String, Any>(
-                            "_4" to mapOf("a1" to 4000),
-                            "_5" to mapOf("a1" to 5000)
-                        )
+            mapOf(
+                "bbbb" to mapOf(
+                    "b1" to mapOf("a1" to 1000),
+                    "b2" to listOf<Any>(
+                        mapOf("a1" to 2000),
+                        mapOf("a1" to 3000)
+                    ),
+                    "b3" to mapOf<String, Any>(
+                        "_4" to mapOf("a1" to 4000),
+                        "_5" to mapOf("a1" to 5000)
                     )
                 )
+            )
         )
 
         // Reverse it!
@@ -102,33 +113,28 @@ class ScriberUnitTest {
         assertEquals(reversed, b)
     }
 
-}
+    @Test
+    fun `multiple level`() {
+        val c = C( B( A(10000) ) )
+        val json = JsonScribeWriter().apply{ write("cccc", c) }.result
+        assertEquals(
+            mapOf(
+                "cccc" to mapOf(
+                    "c1" to mapOf(
+                        "b1" to mapOf(
+                            "a1" to 10000
+                        )
+                    )
+                )
+            ),
+            json
+        )
 
-// ================================================================
-// Collage/Scrap tests
-
-data class Point(val x: Float, val y: Float): IScribeable {
-    override fun scribe(s: IScribeWriter) {
-        s.write("x", x)
-        s.write("y", y)
+        // Reverse it!
+        val reader = JsonScribeReader(json)
+        val reversed = reader.read("cccc", ::unscribeC)
+        assertEquals(reversed, c)
     }
-}
-fun unscribePoint(s: IScribeReader): Point? =
-        Point(s.read_Float("x") ?: 0f,
-              s.read_Float("y") ?: 0f)
 
+}
 
-class Scrap(val id: String, val center: Point): IScribeable {
-    override fun scribe(s: IScribeWriter) {
-        s.write("id", id)
-        s.write("center", center)
-    }
-}
-class Collage(val size: Point, val scraps: List<Scrap> = listOf()): IScribeable {
-    var backgroundScrap: Scrap? = null
-    override fun scribe(s: IScribeWriter) {
-        s.write("size", size)
-        s.write("scraps", scraps)
-        s.write("backgroundScrap", backgroundScrap)
-    }
-}

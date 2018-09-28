@@ -40,13 +40,17 @@ class JsonScribeWriter: IScribeWriter {
         return this
     }
 }
-class JsonScribeReader(val json: Map<String, Any?>): IScribeReader {
+class JsonScribeReader(json: JsonMap): IScribeReader {
+    private val jsonStack = mutableListOf<JsonMap>(json)
+    private val json
+        get() = jsonStack.last()
 
     private fun extract(v: Any?, scribeable: ScribeableConstructor): IScribeable? {
         @Suppress("UNCHECKED_CAST")
-        val s: Map<String, Any?>? = v as? Map<String, Any?>?
-        return if (s == null) null
-        else scribeable(JsonScribeReader(s))
+        val s: JsonMap? = v as? JsonMap?
+        s ?: return null
+        jsonStack.add(s)
+        return scribeable(this).also { jsonStack.removeLast() }
     }
     // ==== Reading interface
     override fun read_Int(key: String): Int?            { return json[key] as? Int }
