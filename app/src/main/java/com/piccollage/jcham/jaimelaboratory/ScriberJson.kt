@@ -12,9 +12,9 @@ class JsonScribeWriter: IScribeWriter {
         get() = resultStack.last()
     private val resultStack = mutableListOf<JsonMap>(HashMap<String, Any?>())
 
-    private fun extract(s: IScribeable?): JsonMap {
+    private fun extract(s: IScribeable?, subwriter: IScribeWriter=this): JsonMap {
         resultStack.add(HashMap<String, Any?>())
-        s?.scribe(this)
+        s?.scribe(subwriter)
         return resultStack.removeLast()
     }
 
@@ -26,17 +26,17 @@ class JsonScribeWriter: IScribeWriter {
         result[key] = value; return this }
     override fun write(key: String, value: Boolean?)    : IScribeWriter {
         result[key] = value; return this }
-    override fun write(key: String, value: IScribeable?): IScribeWriter {
-        result[key] = if (value != null) extract(value)
+    override fun write(key: String, value: IScribeable?, subwriter: IScribeWriter): IScribeWriter {
+        result[key] = if (value != null) extract(value, subwriter)
         else null
         return this
     }
-    override fun write(key: String, value: List<IScribeable?>?): IScribeWriter {
-        result[key] = value?.map { extract(it) }
+    override fun write(key: String, value: List<IScribeable?>?, subwriter: IScribeWriter): IScribeWriter {
+        result[key] = value?.map { extract(it, subwriter) }
         return this
     }
-    override fun write(key: String, value: Map<String, IScribeable?>?): IScribeWriter {
-        result[key] = value?.mapValues { extract(it.value) }
+    override fun write(key: String, value: Map<String, IScribeable?>?, subwriter: IScribeWriter): IScribeWriter {
+        result[key] = value?.mapValues { extract(it.value, subwriter) }
         return this
     }
 }

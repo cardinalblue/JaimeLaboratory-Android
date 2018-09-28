@@ -16,7 +16,7 @@ data class Point(val x: Float, val y: Float): IScribeable {
 }
 fun unscribePoint(s: IScribeReader): Point? =
         Point(s.read_Float("x") ?: 0f,
-                s.read_Float("y") ?: 0f)
+            s.read_Float("y") ?: 0f)
 
 
 open class Scrap(val id: String, val center: Point): IScribeable {
@@ -25,13 +25,13 @@ open class Scrap(val id: String, val center: Point): IScribeable {
         s.write("center", center)
     }
 }
-fun unscribeScrap(s: IScribeReader): Scrap? {
-    return when (s.read_String("type")) {
+fun unscribeScrap(s: IScribeReader): Scrap? =
+    when (s.read_String("type")) {
         "image" -> unscribeImageScrap(s)
         "text" -> unscribeTextScrap(s)
         else -> null
     }
-}
+
 class ImageScrap(id: String, center: Point, val imageUrl: String): Scrap(id, center) {
     override fun scribe(s: IScribeWriter) {
         super.scribe(s)
@@ -39,13 +39,13 @@ class ImageScrap(id: String, center: Point, val imageUrl: String): Scrap(id, cen
         s.write("imageUrl", imageUrl)
     }
 }
-fun unscribeImageScrap(s: IScribeReader): ImageScrap? {
-    return ImageScrap(
-            s.read_String("id")!!,
-            s.read("center", ::unscribePoint) as Point,
-            s.read_String("imageUrl")!!
+fun unscribeImageScrap(s: IScribeReader): ImageScrap? =
+    ImageScrap(
+        s.read_String("id")!!,
+        s.read("center", ::unscribePoint) as Point,
+        s.read_String("imageUrl")!!
     )
-}
+
 class TextScrap(id: String, center: Point, val text: String): Scrap(id, center) {
     override fun scribe(s: IScribeWriter) {
         super.scribe(s)
@@ -53,14 +53,12 @@ class TextScrap(id: String, center: Point, val text: String): Scrap(id, center) 
         s.write("text", text)
     }
 }
-fun unscribeTextScrap(s: IScribeReader): TextScrap? {
-    return TextScrap(
-            s.read_String("id")!!,
-            s.read("center", ::unscribePoint) as Point,
-            s.read_String("text")!!
+fun unscribeTextScrap(s: IScribeReader): TextScrap? =
+    TextScrap(
+        s.read_String("id")!!,
+        s.read("center", ::unscribePoint) as Point,
+        s.read_String("text")!!
     )
-}
-
 
 class Collage(val size: Point, val scraps: List<Scrap> = listOf()): IScribeable {
     var backgroundScrap: Scrap? = null
@@ -70,14 +68,13 @@ class Collage(val size: Point, val scraps: List<Scrap> = listOf()): IScribeable 
         backgroundScrap?.let { s.write("backgroundScrap", it) }
     }
 }
-fun unscribeCollage(s: IScribeReader): Collage? {
-    return Collage(
+fun unscribeCollage(s: IScribeReader): Collage? =
+    Collage(
         s.read("size", ::unscribePoint) as Point,
         s.read_List("scraps", ::unscribeScrap) as List<Scrap>
     ).apply {
         backgroundScrap = s.read("backgroundScrap", ::unscribeScrap) as Scrap
     }
-}
 
 class ScriberCollageUnitTest {
 
@@ -92,35 +89,35 @@ class ScriberCollageUnitTest {
                 )
         c.backgroundScrap = c.scraps[1]
         val json = JsonScribeWriter().apply {
-                       write("the collage", c)
+                       ScriberReferenceWriter(this).write("the collage", c)
                    }.result
         val jsonS = mapOf(
-                "the collage" to mapOf(
-                        "size" to mapOf("x" to 200.0f, "y" to 300.0f),
-                        "scraps" to listOf(
-                                mapOf(
-                                        "id" to "t1", "type" to "text",
-                                        "center" to mapOf("x" to 100.0f, "y" to 120.0f),
-                                        "text" to "Hello!"
-                                ),
-                                mapOf(
-                                        "id" to "i1", "type" to "image",
-                                        "center" to mapOf("x" to 110.0f, "y" to 190.0f),
-                                        "imageUrl" to "image1.jpg"
-                                ),
-                                mapOf(
-                                        "id" to "i2", "type" to "image",
-                                        "center" to mapOf("x" to 250.0f, "y" to 220.0f),
-                                        "imageUrl" to "image2.jpg"
-                                )
-                        ),
-                        // This COPIES the Scrap definition (need to enable reference checking)
-                        "backgroundScrap" to mapOf(
-                                "id" to "i1", "type" to "image",
-                                "center" to mapOf("x" to 110.0f, "y" to 190.0f),
-                                "imageUrl" to "image1.jpg"
-                        )
+            "the collage" to mapOf(
+                "size" to mapOf("x" to 200.0f, "y" to 300.0f),
+                "scraps" to listOf(
+                    mapOf(
+                        "id" to "t1", "type" to "text",
+                        "center" to mapOf("x" to 100.0f, "y" to 120.0f),
+                        "text" to "Hello!"
+                    ),
+                    mapOf(
+                        "id" to "i1", "type" to "image",
+                        "center" to mapOf("x" to 110.0f, "y" to 190.0f),
+                        "imageUrl" to "image1.jpg"
+                    ),
+                    mapOf(
+                        "id" to "i2", "type" to "image",
+                        "center" to mapOf("x" to 250.0f, "y" to 220.0f),
+                        "imageUrl" to "image2.jpg"
+                    )
+                ),
+                // This COPIES the Scrap definition (need to enable reference checking)
+                "backgroundScrap" to mapOf(
+                        "id" to "i1", "type" to "image",
+                        "center" to mapOf("x" to 110.0f, "y" to 190.0f),
+                        "imageUrl" to "image1.jpg"
                 )
+            )
         )
         assertThat(json).isEqualToComparingFieldByFieldRecursively(jsonS)
 

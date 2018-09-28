@@ -6,13 +6,16 @@ interface IScribeable {
 typealias ScribeableConstructor = (IScribeReader) -> IScribeable?
 
 interface IScribeWriter {
-    fun write(key: String, value: IScribeable?)                     : IScribeWriter
-    fun write(key: String, value: List<IScribeable?>?)              : IScribeWriter
-    fun write(key: String, value: Map<String, IScribeable?>?)       : IScribeWriter
-    fun write(key: String, value: Int?)                             : IScribeWriter
-    fun write(key: String, value: Float?)                           : IScribeWriter
-    fun write(key: String, value: String?)                          : IScribeWriter
-    fun write(key: String, value: Boolean?)                         : IScribeWriter
+    fun write(key: String, value: Int?)     : IScribeWriter
+    fun write(key: String, value: Float?)   : IScribeWriter
+    fun write(key: String, value: String?)  : IScribeWriter
+    fun write(key: String, value: Boolean?) : IScribeWriter
+    fun write(key: String, value: IScribeable?, subwriter: IScribeWriter=this)
+            : IScribeWriter
+    fun write(key: String, value: List<IScribeable?>?, subwriter: IScribeWriter=this)
+            : IScribeWriter
+    fun write(key: String, value: Map<String, IScribeable?>?, subwriter: IScribeWriter=this)
+            : IScribeWriter
 }
 interface IScribeReader {
     fun read_Int(key: String): Int?
