@@ -80,6 +80,8 @@ class ScriberCollageUnitTest {
 
     @Test
     fun `basic functionality`() {
+        println("ScriberCollageUnitTest")
+
         val c = Collage(Point(200f, 300f),
                     listOf<Scrap>(
                      TextScrap("t1", Point(100f, 120f), "Hello!"),
