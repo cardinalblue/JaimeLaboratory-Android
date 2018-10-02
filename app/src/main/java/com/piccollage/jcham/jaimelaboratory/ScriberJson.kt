@@ -18,44 +18,34 @@ class JsonScribeWriter(val result: MutableMap<String, Any?> = mutableMapOf<Strin
     override fun write(key: String, value: Boolean?) {
         result.set(key, value) }
 
-    override fun write(key: String, value: IScribeable?): IScribeWriter? {
-        val map = HashMap<String, Any?>()
-        result[key] = map
-        return JsonScribeWriter(map)
+    fun scribe(scriber: Scriber, s: IScribeable?) = HashMap<String, Any?>().apply {
+        scriber(s, JsonScribeWriter(this))
     }
-    override fun write(key: String, value: List<IScribeable?>?): IScribeWriter? {
-        val list = ArrayList<Any?>()
-        result[key] = list
-        return JsonListScribeWriter(list)
+
+    override fun write(key: String, value: IScribeable?, scriber: Scriber) {
+        result[key] = scribe(scriber, value)
+
     }
-    override fun write(key: String, value: Map<String, IScribeable?>?): IScribeWriter? {
-        val map = HashMap<String, Any?>()
-        result[key] = map
-        return JsonScribeWriter(map)
+    override fun write(key: String, value: List<Any?>?, scriber: Scriber) {
+        result[key] = value?.map {
+            if (it is IScribeable)
+                scribe(scriber, it)
+            else
+                it
+        }
     }
+    override fun write(key: String, value: Map<String, Any?>?, scriber: Scriber) {
+        result[key] = value?.mapValues { e ->
+            val v = e.value
+            if (v is IScribeable)
+                scribe(scriber, v)
+            else
+                e.value
+        }
+    }
+
 }
 
-class JsonListScribeWriter(val result: ArrayList<Any?>): IScribeWriter {
-    override fun write(key: String, value: Int?) {}
-    override fun write(key: String, value: Float?) {}
-    override fun write(key: String, value: String?) {}
-    override fun write(key: String, value: Boolean?) {}
-    override fun write(key: String, value: IScribeable?): IScribeWriter? {
-        val map = HashMap<String, Any?>()
-        result.add(map)
-        return JsonScribeWriter(map)
-    }
-    override fun write(key: String, value: List<IScribeable?>?): IScribeWriter? {
-        val list = ArrayList<Any?>()
-        result.add(list)
-        return JsonListScribeWriter(list)
-    }
-    override fun write(key: String, value: Map<String, IScribeable?>?): IScribeWriter? {
-        val map = HashMap<String, Any?>()
-        result.add(map)
-        return JsonScribeWriter(map)
-    }
-}
 
 typealias JsonMap = Map<String, Any?>
 class JsonScribeReader(json: JsonMap, var inner: IScribeReader? = null): IScribeReader {

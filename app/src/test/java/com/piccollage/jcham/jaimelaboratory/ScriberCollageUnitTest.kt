@@ -90,7 +90,7 @@ class ScriberCollageUnitTest {
         c.backgroundScrap = c.scraps[1]
 
         val json = mutableMapOf<String, Any?>()
-        val jsonWriter = ScribeWriter(JsonScribeWriter(json))
+        val jsonWriter = JsonScribeWriter(json)
         jsonWriter.write("the collage", c)
 
         val jsonS = mapOf(

@@ -1,6 +1,6 @@
 package com.piccollage.jcham.jaimelaboratory
 
-
+/*
 class ScriberReferenceWriter(
         val inner: IScribeWriter,
         val cache: Set<IScribeReferenceable> = HashSet<IScribeReferenceable>()
@@ -39,3 +39,4 @@ class ScriberReferenceWriter(
 
 
 }
+*/
