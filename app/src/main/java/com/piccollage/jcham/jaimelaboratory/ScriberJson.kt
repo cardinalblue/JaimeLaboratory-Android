@@ -6,41 +6,59 @@ fun <T> MutableList<T>.removeLast(): T {
     removeAt(i)
     return last
 }
-typealias JsonMap = MutableMap<String, Any?>
-class JsonScribeWriter: IScribeWriter {
-    val result
-        get() = resultStack.last()
-    private val resultStack = mutableListOf<JsonMap>(HashMap<String, Any?>())
 
-    private fun extract(s: IScribeable?): JsonMap {
-        resultStack.add(HashMap<String, Any?>())
-        s?.scribe(this)
-        return resultStack.removeLast()
-    }
+class JsonScribeWriter(val result: MutableMap<String, Any?> = mutableMapOf<String, Any?>()): IScribeWriter {
 
-    override fun write(key: String, value: Int?)        : IScribeWriter {
-        result[key] = value; return this }
-    override fun write(key: String, value: Float?)      : IScribeWriter {
-        result[key] = value; return this }
-    override fun write(key: String, value: String?)     : IScribeWriter {
-        result[key] = value; return this }
-    override fun write(key: String, value: Boolean?)    : IScribeWriter {
-        result[key] = value; return this }
-    override fun write(key: String, value: IScribeable?): IScribeWriter {
-        result[key] = if (value != null) extract(value)
-        else null
-        return this
+    override fun write(key: String, value: Int?) {
+        result.set(key, value) }
+    override fun write(key: String, value: Float?) {
+        result.set(key, value) }
+    override fun write(key: String, value: String?) {
+        result.set(key, value) }
+    override fun write(key: String, value: Boolean?) {
+        result.set(key, value) }
+
+    override fun write(key: String, value: IScribeable?): IScribeWriter? {
+        val map = HashMap<String, Any?>()
+        result[key] = map
+        return JsonScribeWriter(map)
     }
-    override fun write(key: String, value: List<IScribeable?>?): IScribeWriter {
-        result[key] = value?.map { extract(it) }
-        return this
+    override fun write(key: String, value: List<IScribeable?>?): IScribeWriter? {
+        val list = ArrayList<Any?>()
+        result[key] = list
+        return JsonListScribeWriter(list)
     }
-    override fun write(key: String, value: Map<String, IScribeable?>?): IScribeWriter {
-        result[key] = value?.mapValues { extract(it.value) }
-        return this
+    override fun write(key: String, value: Map<String, IScribeable?>?): IScribeWriter? {
+        val map = HashMap<String, Any?>()
+        result[key] = map
+        return JsonScribeWriter(map)
     }
 }
-class JsonScribeReader(json: JsonMap): IScribeReader {
+
+class JsonListScribeWriter(val result: ArrayList<Any?>): IScribeWriter {
+    override fun write(key: String, value: Int?) {}
+    override fun write(key: String, value: Float?) {}
+    override fun write(key: String, value: String?) {}
+    override fun write(key: String, value: Boolean?) {}
+    override fun write(key: String, value: IScribeable?): IScribeWriter? {
+        val map = HashMap<String, Any?>()
+        result.add(map)
+        return JsonScribeWriter(map)
+    }
+    override fun write(key: String, value: List<IScribeable?>?): IScribeWriter? {
+        val list = ArrayList<Any?>()
+        result.add(list)
+        return JsonListScribeWriter(list)
+    }
+    override fun write(key: String, value: Map<String, IScribeable?>?): IScribeWriter? {
+        val map = HashMap<String, Any?>()
+        result.add(map)
+        return JsonScribeWriter(map)
+    }
+}
+
+typealias JsonMap = Map<String, Any?>
+class JsonScribeReader(json: JsonMap, var inner: IScribeReader? = null): IScribeReader {
     private val jsonStack = mutableListOf<JsonMap>(json)
     private val json
         get() = jsonStack.last()
@@ -50,7 +68,9 @@ class JsonScribeReader(json: JsonMap): IScribeReader {
         val s: JsonMap? = v as? JsonMap?
         s ?: return null
         jsonStack.add(s)
-        return scribeable(this).also { jsonStack.removeLast() }
+        return scribeable(inner ?: this).also {
+            jsonStack.removeLast()
+        }
     }
     // ==== Reading interface
     override fun read_Int(key: String): Int?            { return json[key] as? Int }

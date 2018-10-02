@@ -65,7 +65,7 @@ class ScriberUnitTest {
     @Test
     fun `basic functionality`() {
         val a = A(100, 200.0f, "300", true, null)
-        val json = JsonScribeWriter().apply{ write("a", a) }.result
+        val json = JsonScribeWriter().apply{ ScribeWriter(this).write("a", a) }.result
         assertEquals(json,
                      mapOf(
                         "a" to mapOf(
@@ -90,8 +90,8 @@ class ScriberUnitTest {
             listOf(A(2000), A(3000)),
             mapOf("_4" to A(4000), "_5" to A(5000))
         )
-        val json = JsonScribeWriter().apply{ write("bbbb", b) }.result
-        assertEquals(json,
+        val json = JsonScribeWriter().apply{ ScribeWriter(this).write("bbbb", b) }.result
+        assertEquals(
             mapOf(
                 "bbbb" to mapOf(
                     "b1" to mapOf("a1" to 1000),
@@ -104,7 +104,8 @@ class ScriberUnitTest {
                         "_5" to mapOf("a1" to 5000)
                     )
                 )
-            )
+            ),
+            json
         )
 
         // Reverse it!
@@ -116,7 +117,7 @@ class ScriberUnitTest {
     @Test
     fun `multiple level`() {
         val c = C( B( A(10000) ) )
-        val json = JsonScribeWriter().apply{ write("cccc", c) }.result
+        val json = JsonScribeWriter().apply{ ScribeWriter(this).write("cccc", c) }.result
         assertEquals(
             mapOf(
                 "cccc" to mapOf(
