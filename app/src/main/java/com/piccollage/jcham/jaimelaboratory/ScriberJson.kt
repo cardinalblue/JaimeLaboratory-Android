@@ -22,21 +22,17 @@ class JsonScribeWriter: IScribeWriter {
     override fun write(key: String, value: IScribeable?, scriber: Scriber) {
         result[key] = value?.let { JsonScribeWriter()
                         .apply { scriber(this, value) }
-                        .result
-                        }
+                        .result }
     }
     override fun write(key: String, value: List<Any?>?, scriber: Scriber) {
         result[key] = value?.let{ JsonListScribeWriter()
                         .apply { scriber(this, ListScribeable(value)) }
-                        .result
-                        }
-
+                        .result }
     }
     override fun write(key: String, value: Map<String, Any?>?, scriber: Scriber) {
         result[key] = value?.let { JsonScribeWriter()
                         .apply { scriber(this, MapScribeable(value)) }
-                        .result
-                        }
+                        .result }
     }
 
 }
