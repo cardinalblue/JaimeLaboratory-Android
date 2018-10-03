@@ -7,7 +7,8 @@ fun <T> MutableList<T>.removeLast(): T {
     return last
 }
 
-class JsonScribeWriter(val result: MutableMap<String, Any?> = mutableMapOf<String, Any?>()): IScribeWriter {
+class JsonScribeWriter: IScribeWriter {
+    val result: MutableMap<String, Any?> = mutableMapOf<String, Any?>()
 
     override fun write(key: String, value: Int?) {
         result.set(key, value) }
@@ -18,35 +19,93 @@ class JsonScribeWriter(val result: MutableMap<String, Any?> = mutableMapOf<Strin
     override fun write(key: String, value: Boolean?) {
         result.set(key, value) }
 
-    private fun doScribing(scriber: Scriber, s: IScribeable?): Map<String, Any?> =
-        HashMap<String, Any?>().apply {
-            scriber(JsonScribeWriter(this), s)
-        }
-
     override fun write(key: String, value: IScribeable?, scriber: Scriber) {
-        result[key] = doScribing(scriber, value)
-
+        result[key] = value?.let { JsonScribeWriter()
+                        .apply { scriber(this, value) }
+                        .result
+                        }
     }
     override fun write(key: String, value: List<Any?>?, scriber: Scriber) {
-        result[key] = value?.map {
-            if (it is IScribeable)
-                doScribing(scriber, it)
-            else
-                it
-        }
+        result[key] = value?.let{ JsonListScribeWriter()
+                        .apply { scriber(this, ListScribeable(value)) }
+                        .result
+                        }
+
     }
     override fun write(key: String, value: Map<String, Any?>?, scriber: Scriber) {
-        result[key] = value?.mapValues { e ->
-            val v = e.value
-            if (v is IScribeable)
-                doScribing(scriber, v)
-            else
-                e.value
-        }
+        result[key] = value?.let { JsonScribeWriter()
+                        .apply { scriber(this, MapScribeable(value)) }
+                        .result
+                        }
     }
 
 }
+class JsonListScribeWriter: IScribeWriter {
+    val result = mutableListOf<Any?>()
+    override fun write(key: String, value: Int?) {
+        result.add(value) }
+    override fun write(key: String, value: Float?) {
+        result.add(value) }
+    override fun write(key: String, value: String?) {
+        result.add(value) }
+    override fun write(key: String, value: Boolean?) {
+        result.add(value) }
+    override fun write(key: String, value: IScribeable?, scriber: Scriber) {
+        result.add(
+            value?.let { JsonScribeWriter()
+                .apply { scriber(this, value) }
+                .result
+            })
+    }
+    override fun write(key: String, value: List<Any?>?, scriber: Scriber) {
+        result.add(
+            value?.let { JsonListScribeWriter()
+                .apply { scriber(this, ListScribeable(value)) }
+                .result
+            })
+    }
+    override fun write(key: String, value: Map<String, Any?>?, scriber: Scriber) {
+        result.add(
+            value?.let { JsonScribeWriter()
+                .apply { scriber(this, MapScribeable(value)) }
+                .result
+            })
+    }
+}
 
+class ListScribeable(val list: List<Any?>): IScribeable {
+    override fun scribe(s: IScribeWriter) {
+        list.forEachIndexed { index, value ->
+            val key = index.toString()
+            when(value) {
+            is Int                  -> s.write(key, value)
+            is Float                -> s.write(key, value)
+            is String               -> s.write(key, value)
+            is Boolean              -> s.write(key, value)
+            is IScribeable          -> s.write(key, value)
+            is List<Any?>           -> s.write(key, value)
+            is Map<*, *>            -> s.write(key, value as Map<String, Any?>)
+            else                    -> {}
+            }
+        }
+    }
+}
+class MapScribeable(val map: Map<String, Any?>): IScribeable {
+    override fun scribe(s: IScribeWriter) {
+        map.forEach { (key, value) ->
+            when(value) {
+                is Int                  -> s.write(key, value)
+                is Float                -> s.write(key, value)
+                is String               -> s.write(key, value)
+                is Boolean              -> s.write(key, value)
+                is IScribeable          -> s.write(key, value)
+                is List<Any?>           -> s.write(key, value)
+                is Map<*, *>            -> s.write(key, value as Map<String, Any?>)
+                else                    -> {}
+            }
+        }
+    }
+}
 
 typealias JsonMap = Map<String, Any?>
 class JsonScribeReader(json: JsonMap, var inner: IScribeReader? = null): IScribeReader {

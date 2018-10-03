@@ -81,8 +81,6 @@ class ScriberCollageUnitTest {
 
     @Test
     fun `basic functionality`() {
-        println("ScriberCollageUnitTest >>>>>>>>")
-
         val c = Collage(Point(200f, 300f),
                 listOf<Scrap>(
                         TextScrap("t1", Point(100f, 120f), "Hello!"),
@@ -92,36 +90,36 @@ class ScriberCollageUnitTest {
         )
         c.backgroundScrap = c.scraps[1]
 
-        val json = mutableMapOf<String, Any?>()
-        val writer = ScriberReferenceWriter(JsonScribeWriter(json))
-        writer.write("the collage", c)
+        // ---- First do it without references
 
-        println(">>>>>> ${json}")
+        val writerJson = JsonScribeWriter()
+        var json = writerJson.apply { write("the collage", c) }.result
 
-        val jsonS = mapOf(
-                "the collage" to mapOf(
-                        "size" to mapOf("x" to 200.0f, "y" to 300.0f),
+        fun <K, V> M(vararg pairs: Pair<K, V>): Map<K, V> = mutableMapOf<K, V>(*pairs)
+        val jsonS = M(
+                "the collage" to M(
+                        "size" to M("x" to 200.0f, "y" to 300.0f),
                         "scraps" to listOf(
-                                mapOf(
+                                M(
                                         "id" to "t1", "type" to "text",
-                                        "center" to mapOf("x" to 100.0f, "y" to 120.0f),
+                                        "center" to M("x" to 100.0f, "y" to 120.0f),
                                         "text" to "Hello!"
                                 ),
-                                mapOf(
+                                M(
                                         "id" to "i1", "type" to "image",
-                                        "center" to mapOf("x" to 110.0f, "y" to 190.0f),
+                                        "center" to M("x" to 110.0f, "y" to 190.0f),
                                         "imageUrl" to "image1.jpg"
                                 ),
-                                mapOf(
+                                M(
                                         "id" to "i2", "type" to "image",
-                                        "center" to mapOf("x" to 250.0f, "y" to 220.0f),
+                                        "center" to M("x" to 250.0f, "y" to 220.0f),
                                         "imageUrl" to "image2.jpg"
                                 )
                         ),
                         // This COPIES the Scrap definition (need to enable reference checking)
-                        "backgroundScrap" to mapOf(
+                        "backgroundScrap" to M(
                                 "id" to "i1", "type" to "image",
-                                "center" to mapOf("x" to 110.0f, "y" to 190.0f),
+                                "center" to M("x" to 110.0f, "y" to 190.0f),
                                 "imageUrl" to "image1.jpg"
                         )
                 )
@@ -131,6 +129,16 @@ class ScriberCollageUnitTest {
         val collageS = JsonScribeReader(json).read("the collage", ::unscribeCollage)
         assertThat(collageS).isEqualToComparingFieldByFieldRecursively(c)
 
-        println("FINISHED")
+        // ---- Enable references and write again
+
+        val writerRefs = ScriberReferencerWriter(writerJson).apply { write("the collage", c) }
+        json = writerJson.apply { write("the collage", c) }.result
+        val jsonCollage = jsonS.get("the collage") as MutableMap<String, Any?>
+        jsonCollage.set("backgroundScrap", M("\$ref" to "scraps/i1"))
+
+        ScriberReferencerWriter(writerJson).apply { write("the collage", c) }
+        json = writerJson.result
+        assertThat(json).isEqualToComparingFieldByFieldRecursively(jsonS)
+
     }
 }

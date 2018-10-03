@@ -1,18 +1,17 @@
 package com.piccollage.jcham.jaimelaboratory
 
-class ScriberReferenceWriter(
+class ScriberReferencerWriter(
         val inner: IScribeWriter,
         val cache: MutableSet<IScribeReferenceable> = HashSet<IScribeReferenceable>()
         ): IScribeWriter by inner {
 
     private fun wrapScriber(outer: Scriber): Scriber {
-        return { inner: IScribeWriter, s: IScribeable?  ->
-            outer(ScriberReferenceWriter(inner, cache), s)
+        return fun(inner: IScribeWriter, scribeable: IScribeable?): Unit? {
+            return outer(ScriberReferencerWriter(inner, cache), scribeable)
         }
-    }
+     }
 
     override fun write(key: String, value: IScribeable?, scriber: Scriber) {
-        println("ScribeReferencer ${value}")
 
         // See if referenceable
         (value as? IScribeReferenceable)?.let { referenceable ->
@@ -26,7 +25,6 @@ class ScriberReferenceWriter(
                 }
             }
             else {
-                println("ScriberReferencer adding ${referenceable}")
                 cache.add(referenceable)
             }
         }
