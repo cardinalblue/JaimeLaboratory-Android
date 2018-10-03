@@ -8,8 +8,8 @@ interface IScribeable {
     fun scribe(s: IScribeWriter)
 }
 typealias ScribeableConstructor = (IScribeReader) -> IScribeable?
-typealias Scriber = (IScribeable?, IScribeWriter) -> Unit?
-val ScriberDefault = { scribeable: IScribeable?, writer: IScribeWriter ->
+typealias Scriber = (IScribeWriter, IScribeable?) -> Unit?
+val ScriberDefault: Scriber = { writer: IScribeWriter, scribeable: IScribeable? ->
     scribeable?.scribe(writer)
 }
 

@@ -18,18 +18,19 @@ class JsonScribeWriter(val result: MutableMap<String, Any?> = mutableMapOf<Strin
     override fun write(key: String, value: Boolean?) {
         result.set(key, value) }
 
-    fun scribe(scriber: Scriber, s: IScribeable?) = HashMap<String, Any?>().apply {
-        scriber(s, JsonScribeWriter(this))
-    }
+    private fun doScribing(scriber: Scriber, s: IScribeable?): Map<String, Any?> =
+        HashMap<String, Any?>().apply {
+            scriber(JsonScribeWriter(this), s)
+        }
 
     override fun write(key: String, value: IScribeable?, scriber: Scriber) {
-        result[key] = scribe(scriber, value)
+        result[key] = doScribing(scriber, value)
 
     }
     override fun write(key: String, value: List<Any?>?, scriber: Scriber) {
         result[key] = value?.map {
             if (it is IScribeable)
-                scribe(scriber, it)
+                doScribing(scriber, it)
             else
                 it
         }
@@ -38,7 +39,7 @@ class JsonScribeWriter(val result: MutableMap<String, Any?> = mutableMapOf<Strin
         result[key] = value?.mapValues { e ->
             val v = e.value
             if (v is IScribeable)
-                scribe(scriber, v)
+                doScribing(scriber, v)
             else
                 e.value
         }

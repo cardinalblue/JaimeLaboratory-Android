@@ -17,7 +17,8 @@ fun unscribePoint(s: IScribeReader): Point? =
                 s.read_Float("y") ?: 0f)
 
 
-open class Scrap(val id: String, val center: Point): IScribeable {
+open class Scrap(val id: String, val center: Point): IScribeable, IScribeReferenceable {
+    override val reference get() = "scraps/${id}"
     override fun scribe(s: IScribeWriter) {
         s.write("id", id)
         s.write("center", center)
@@ -63,7 +64,9 @@ class Collage(val size: Point, val scraps: List<Scrap> = listOf()): IScribeable 
     override fun scribe(s: IScribeWriter) {
         s.write("size", size)
         s.write("scraps", scraps)
-        backgroundScrap?.let { s.write("backgroundScrap", it) }
+        backgroundScrap?.let {
+            s.write("backgroundScrap", it)
+        }
     }
 }
 fun unscribeCollage(s: IScribeReader): Collage? =
@@ -78,7 +81,7 @@ class ScriberCollageUnitTest {
 
     @Test
     fun `basic functionality`() {
-        println("ScriberCollageUnitTest")
+        println("ScriberCollageUnitTest >>>>>>>>")
 
         val c = Collage(Point(200f, 300f),
                 listOf<Scrap>(
@@ -90,8 +93,10 @@ class ScriberCollageUnitTest {
         c.backgroundScrap = c.scraps[1]
 
         val json = mutableMapOf<String, Any?>()
-        val jsonWriter = JsonScribeWriter(json)
-        jsonWriter.write("the collage", c)
+        val writer = ScriberReferenceWriter(JsonScribeWriter(json))
+        writer.write("the collage", c)
+
+        println(">>>>>> ${json}")
 
         val jsonS = mapOf(
                 "the collage" to mapOf(
@@ -126,5 +131,6 @@ class ScriberCollageUnitTest {
         val collageS = JsonScribeReader(json).read("the collage", ::unscribeCollage)
         assertThat(collageS).isEqualToComparingFieldByFieldRecursively(c)
 
+        println("FINISHED")
     }
 }
