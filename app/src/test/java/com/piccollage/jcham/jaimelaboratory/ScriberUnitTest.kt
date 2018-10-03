@@ -34,8 +34,8 @@ fun unscribeA(s: IScribeReader) = A(
 
 data class B(
         val b1: A? = null,
-        val b2: List<A?>? = null,
-        val b3: Map<String, A?>? = null
+        val b2: List<Any?>? = null,
+        val b3: Map<String, Any?>? = null
 ): IScribeable {
     override fun scribe(s: IScribeWriter) {
         b1?.let { s.write("b1", it) }
@@ -88,7 +88,11 @@ class ScriberUnitTest {
         val b = B(
             A(1000),
             listOf(A(2000), A(3000)),
-            mapOf("_4" to A(4000), "_5" to A(5000))
+            mapOf(
+                "_4" to A(4000),
+                "_5" to A(5000),
+                "_6" to "six thousand"
+                )
         )
         val json = JsonScribeWriter().apply{ write("bbbb", b) }.result
         assertEquals(
@@ -101,7 +105,8 @@ class ScriberUnitTest {
                     ),
                     "b3" to mapOf<String, Any>(
                         "_4" to mapOf("a1" to 4000),
-                        "_5" to mapOf("a1" to 5000)
+                        "_5" to mapOf("a1" to 5000),
+                        "_6" to "six thousand"
                     )
                 )
             ),
@@ -111,7 +116,7 @@ class ScriberUnitTest {
         // Reverse it!
         val reader = JsonScribeReader(json)
         val reversed = reader.read("bbbb", ::unscribeB)
-        assertEquals(reversed, b)
+        assertEquals(b, reversed)
     }
 
     @Test
@@ -134,7 +139,7 @@ class ScriberUnitTest {
         // Reverse it!
         val reader = JsonScribeReader(json)
         val reversed = reader.read("cccc", ::unscribeC)
-        assertEquals(reversed, c)
+        assertEquals(c, reversed)
     }
 
 }
