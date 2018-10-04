@@ -2,6 +2,7 @@ package com.piccollage.jcham.jaimelaboratory
 
 import org.junit.Test
 import org.assertj.core.api.Assertions.*
+import org.w3c.dom.Text
 
 // ================================================================
 // Collage/Scrap tests
@@ -11,11 +12,9 @@ data class Point(val x: Float, val y: Float): IScribeable {
         s.write("x", x)
         s.write("y", y)
     }
+    constructor(s: IScribeReader): this(s.readFloat("x") ?: 0f,
+                                        s.readFloat("y") ?: 0f)
 }
-fun unscribePoint(s: IScribeReader): Point? =
-        Point(s.read_Float("x") ?: 0f,
-                s.read_Float("y") ?: 0f)
-
 
 open class Scrap(val id: String, val center: Point): IScribeable, IScribeReferenceable {
     override val reference get() = "scraps/${id}"
@@ -24,12 +23,12 @@ open class Scrap(val id: String, val center: Point): IScribeable, IScribeReferen
         s.write("center", center)
     }
 }
-fun unscribeScrap(s: IScribeReader): Scrap? =
-        when (s.read_String("type")) {
-            "image" -> unscribeImageScrap(s)
-            "text" -> unscribeTextScrap(s)
-            else -> null
-        }
+fun Scrap(s: IScribeReader): Scrap? =
+    when (s.readString("type")) {
+        "image" -> ImageScrap(s)
+        "text"  -> TextScrap(s)
+        else -> null
+    }
 
 class ImageScrap(id: String, center: Point, val imageUrl: String): Scrap(id, center) {
     override fun scribe(s: IScribeWriter) {
@@ -37,13 +36,12 @@ class ImageScrap(id: String, center: Point, val imageUrl: String): Scrap(id, cen
         s.write("type", "image")
         s.write("imageUrl", imageUrl)
     }
+    constructor(s: IScribeReader): this(
+                s.readString("id")!!,
+                s.read("center", ::Point) as Point,
+                s.readString("imageUrl")!!
+                )
 }
-fun unscribeImageScrap(s: IScribeReader): ImageScrap? =
-        ImageScrap(
-                s.read_String("id")!!,
-                s.read("center", ::unscribePoint) as Point,
-                s.read_String("imageUrl")!!
-        )
 
 class TextScrap(id: String, center: Point, val text: String): Scrap(id, center) {
     override fun scribe(s: IScribeWriter) {
@@ -51,13 +49,12 @@ class TextScrap(id: String, center: Point, val text: String): Scrap(id, center) 
         s.write("type", "text")
         s.write("text", text)
     }
+    constructor(s: IScribeReader): this(
+                s.readString("id")!!,
+                s.read("center", ::Point) as Point,
+                s.readString("text")!!
+                )
 }
-fun unscribeTextScrap(s: IScribeReader): TextScrap? =
-        TextScrap(
-                s.read_String("id")!!,
-                s.read("center", ::unscribePoint) as Point,
-                s.read_String("text")!!
-        )
 
 class Collage(val size: Point, val scraps: List<Scrap> = listOf()): IScribeable {
     var backgroundScrap: Scrap? = null
@@ -68,14 +65,12 @@ class Collage(val size: Point, val scraps: List<Scrap> = listOf()): IScribeable 
             s.write("backgroundScrap", it)
         }
     }
-}
-fun unscribeCollage(s: IScribeReader): Collage? =
-        Collage(
-                s.read("size", ::unscribePoint) as Point,
-                s.read_List("scraps", ::unscribeScrap) as List<Scrap>
-        ).apply {
-            backgroundScrap = s.read("backgroundScrap", ::unscribeScrap) as Scrap
-        }
+    constructor(s: IScribeReader): this(
+                s.read("size", ::Point) as Point,
+                s.readList("scraps", ::Scrap) as List<Scrap>
+                ) {
+        backgroundScrap = s.read("backgroundScrap", ::Scrap) as Scrap
+    }
 
 class ScriberCollageUnitTest {
 

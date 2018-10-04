@@ -25,11 +25,11 @@ data class A(
     }
 }
 fun unscribeA(s: IScribeReader) = A(
-    s.read_Int("a1"),
-    s.read_Float("a2"),
-    s.read_String("a3"),
-    s.read_Boolean("a4"),
-    s.read_Boolean("a5")
+    s.readInt("a1"),
+    s.readFloat("a2"),
+    s.readString("a3"),
+    s.readBoolean("a4"),
+    s.readBoolean("a5")
 )
 
 data class B(
@@ -45,8 +45,8 @@ data class B(
 }
 fun unscribeB(s: IScribeReader) = B(
         s.read("b1", ::unscribeA) as? A,
-        s.read_List("b2", ::unscribeA) as? List<A?>,
-        s.read_Map("b3", ::unscribeA) as? Map<String, A?>
+        s.readList("b2", ::unscribeA) as? List<A?>,
+        s.readMap("b3", ::unscribeA) as? Map<String, A?>
 )
 
 data class C(
