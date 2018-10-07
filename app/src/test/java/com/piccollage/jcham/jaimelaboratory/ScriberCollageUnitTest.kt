@@ -17,7 +17,7 @@ data class Point(val x: Float, val y: Float): IScribeable {
 }
 
 open class Scrap(val id: String, val center: Point): IScribeable, IScribeReferenceable {
-    override val reference get() = "scraps/${id}"
+    override val reference get() = "/scraps/${id}"
     override fun scribe(s: IScribeWriter) {
         s.write("id", id)
         s.write("center", center)
@@ -69,7 +69,7 @@ class Collage(val size: Point, val scraps: List<Scrap> = listOf()): IScribeable 
                 s.read("size", ::Point) as Point,
                 s.readList("scraps", ::Scrap) as List<Scrap>
                 ) {
-        backgroundScrap = s.read("backgroundScrap", ::Scrap) as Scrap
+        backgroundScrap = s.read("backgroundScrap", ::Scrap) as? Scrap
     }
 }
 
@@ -77,6 +77,8 @@ class ScriberCollageUnitTest {
 
     @Test
     fun `basic functionality`() {
+
+        // ---- Collage setup
         val c = Collage(Point(200f, 300f),
                 listOf<Scrap>(
                         TextScrap("t1", Point(100f, 120f), "Hello!"),
@@ -86,61 +88,68 @@ class ScriberCollageUnitTest {
         )
         c.backgroundScrap = c.scraps[1]
 
-        // ---- First do it without references
+        // ---- This is what the JSON output should look like
+        fun <K, V> M(vararg pairs: Pair<K, V>): Map<K, V> = mutableMapOf<K, V>(*pairs)
+        val jsonS = M(
+            "the collage" to M(
+                "size" to M("x" to 200.0f, "y" to 300.0f),
+                "scraps" to listOf(
+                    M(
+                        "id" to "t1", "type" to "text",
+                        "center" to M("x" to 100.0f, "y" to 120.0f),
+                        "text" to "Hello!"
+                    ),
+                    M(
+                        "id" to "i1", "type" to "image",
+                        "center" to M("x" to 110.0f, "y" to 190.0f),
+                        "imageUrl" to "image1.jpg"
+                    ),
+                    M(
+                        "id" to "i2", "type" to "image",
+                        "center" to M("x" to 250.0f, "y" to 220.0f),
+                        "imageUrl" to "image2.jpg"
+                    )
+                ),
+                // This COPIES the Scrap definition (need to enable reference checking)
+                "backgroundScrap" to M(
+                    "id" to "i1", "type" to "image",
+                    "center" to M("x" to 110.0f, "y" to 190.0f),
+                    "imageUrl" to "image1.jpg"
+                )
+            )
+        )
 
+        // ---- First write without references
         val writerJson = JsonScribeWriter()
         var json = writerJson.apply { write("the collage", c) }.result
 
-        fun <K, V> M(vararg pairs: Pair<K, V>): Map<K, V> = mutableMapOf<K, V>(*pairs)
-        val jsonS = M(
-                "the collage" to M(
-                        "size" to M("x" to 200.0f, "y" to 300.0f),
-                        "scraps" to listOf(
-                                M(
-                                        "id" to "t1", "type" to "text",
-                                        "center" to M("x" to 100.0f, "y" to 120.0f),
-                                        "text" to "Hello!"
-                                ),
-                                M(
-                                        "id" to "i1", "type" to "image",
-                                        "center" to M("x" to 110.0f, "y" to 190.0f),
-                                        "imageUrl" to "image1.jpg"
-                                ),
-                                M(
-                                        "id" to "i2", "type" to "image",
-                                        "center" to M("x" to 250.0f, "y" to 220.0f),
-                                        "imageUrl" to "image2.jpg"
-                                )
-                        ),
-                        // This COPIES the Scrap definition (need to enable reference checking)
-                        "backgroundScrap" to M(
-                                "id" to "i1", "type" to "image",
-                                "center" to M("x" to 110.0f, "y" to 190.0f),
-                                "imageUrl" to "image1.jpg"
-                        )
-                )
-        )
+        // ---- See correct JSON was generated
         assertThat(json).isEqualToComparingFieldByFieldRecursively(jsonS)
 
-        val collageS = JsonScribeReader(json).read("the collage", ::Collage)
-        assertThat(collageS).isEqualToComparingFieldByFieldRecursively(c)
-        println("Read collage ${collageS}")
+        // ---- Read from JSON what we wrote and compare to original
+        val collageS1 = JsonScribeReader(json).read("the collage", ::Collage)
+        assertThat(collageS1).isEqualToComparingFieldByFieldRecursively(c)
+        println("Read collage ${collageS1}")
 
+        // ================================================================
 
         // ---- Enable references and write again
-
         val writerRefs = ScriberReferencerWriter(writerJson).apply { write("the collage", c) }
         json = writerJson.apply { write("the collage", c) }.result
 
-        // Modify the generated JSON to have a reference instead
+        // ---- Modify the generated JSON to have a reference instead
         val jsonCollage = jsonS.get("the collage") as MutableMap<String, Any?>
-        jsonCollage.set("backgroundScrap", M("\$ref" to "scraps/i1"))
+        jsonCollage.set("backgroundScrap", M("\$ref" to "/scraps/i1"))
         println("Comparison collage with reference ${jsonCollage}")
 
-        // Run the output again, should have reference
+        // ---- Write JSON again, should have reference now
         ScriberReferencerWriter(writerJson).apply { write("the collage", c) }
         json = writerJson.result
         assertThat(json).isEqualToComparingFieldByFieldRecursively(jsonS)
 
+        // ---- Read from JSON what we wrote and compare to original
+        val collageS2 = JsonScribeReader(json).read("the collage", ::Collage)
+        assertThat(collageS2).isEqualToComparingFieldByFieldRecursively(c)
+        println("Read collage ${collageS2}")
     }
 }
