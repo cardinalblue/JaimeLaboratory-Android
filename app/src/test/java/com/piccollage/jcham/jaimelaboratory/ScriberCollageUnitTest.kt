@@ -71,6 +71,7 @@ class Collage(val size: Point, val scraps: List<Scrap> = listOf()): IScribeable 
                 ) {
         backgroundScrap = s.read("backgroundScrap", ::Scrap) as Scrap
     }
+}
 
 class ScriberCollageUnitTest {
 
@@ -121,16 +122,22 @@ class ScriberCollageUnitTest {
         )
         assertThat(json).isEqualToComparingFieldByFieldRecursively(jsonS)
 
-        val collageS = JsonScribeReader(json).read("the collage", ::unscribeCollage)
+        val collageS = JsonScribeReader(json).read("the collage", ::Collage)
         assertThat(collageS).isEqualToComparingFieldByFieldRecursively(c)
+        println("Read collage ${collageS}")
+
 
         // ---- Enable references and write again
 
         val writerRefs = ScriberReferencerWriter(writerJson).apply { write("the collage", c) }
         json = writerJson.apply { write("the collage", c) }.result
+
+        // Modify the generated JSON to have a reference instead
         val jsonCollage = jsonS.get("the collage") as MutableMap<String, Any?>
         jsonCollage.set("backgroundScrap", M("\$ref" to "scraps/i1"))
+        println("Comparison collage with reference ${jsonCollage}")
 
+        // Run the output again, should have reference
         ScriberReferencerWriter(writerJson).apply { write("the collage", c) }
         json = writerJson.result
         assertThat(json).isEqualToComparingFieldByFieldRecursively(jsonS)

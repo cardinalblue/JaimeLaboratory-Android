@@ -29,14 +29,6 @@ class JsonScribeWriter: IScribeWriter {
                             .result
                         }
     }
-    override fun write(key: String, value: Map<String, Any?>?, scriber: Scriber) {
-        result[key] = value?.iff {
-                        JsonScribeWriter()
-                            .apply { scriber(this, MapScribeable(value)) }
-                            .result
-                        }
-    }
-
 }
 class JsonListScribeWriter: IScribeWriter {
     val result = mutableListOf<Any?>()
@@ -58,13 +50,6 @@ class JsonListScribeWriter: IScribeWriter {
                 .result
             })
     }
-    override fun write(key: String, value: Map<String, Any?>?, scriber: Scriber) {
-        result.add(
-            value?.iff { JsonScribeWriter()
-                .apply { scriber(this, MapScribeable(value)) }
-                .result
-            })
-    }
 }
 
 
@@ -81,22 +66,17 @@ class JsonScribeReader(val json: Map<String, Any?>): IScribeReader {
             unscriber(JsonScribeReader(map))
         }
     }
-    override fun readList(key: String, unscriber: ListUnscriber): List<Any?>? {
-        val list = json[key] as? List<String, Any?>
-        return list?.iff {
-            unscriber(JsonListScribeReader(list))
-        }
-    }
     override fun readList(key: String, unscriber: Unscriber): List<Any?>? {
-        val list = json[key] as? List<String, Any?>
-        return list?.iff {
-            unscriber(JsonListScribeReader(list))
+        val list = json[key] as? List<Any?>
+        return list?.iff { processList(list, unscriber) }
+    }
+    private fun processList(list: List<Any?>, unscriber: Unscriber): List<Any?> =
+        list.map {
+            when(it) {
+                is Map<*, *> -> unscriber(JsonScribeReader(it as Map<String, Any?>))
+                is List<*>   -> processList(it, unscriber)
+                else -> it
+            }
         }
-    }
-    override fun readMap(key: String, unscriber: Unscriber): Map<String, IScribeable?>? {
-        @Suppress("UNCHECKED_CAST")
-        val map = json[key] as? Map<String, Any>
-        return map?.mapValues { e -> extract(e.value, scribeable) }
-    }
-
 }
+

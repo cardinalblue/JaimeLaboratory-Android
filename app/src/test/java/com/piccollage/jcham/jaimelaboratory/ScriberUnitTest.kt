@@ -23,14 +23,14 @@ data class A(
         a4?.let { s.write("a4", it) }
         a5?.let { s.write("a5", it) }
     }
+    constructor(s: IScribeReader): this(
+        s.readInt("a1"),
+        s.readFloat("a2"),
+        s.readString("a3"),
+        s.readBoolean("a4"),
+        s.readBoolean("a5")
+    )
 }
-fun unscribeA(s: IScribeReader) = A(
-    s.readInt("a1"),
-    s.readFloat("a2"),
-    s.readString("a3"),
-    s.readBoolean("a4"),
-    s.readBoolean("a5")
-)
 
 data class B(
         val b1: A? = null,
@@ -40,14 +40,21 @@ data class B(
     override fun scribe(s: IScribeWriter) {
         b1?.let { s.write("b1", it) }
         b2?.let { s.write("b2", it) }
-        b3?.let { s.write("b3", it) }
+        b3?.let { s.write("b3", MapScribeable(it)) }
     }
+    constructor(s: IScribeReader): this(
+        s.read("b1", ::A) as? A,
+        s.readList("b2", ::A) as? List<A?>,
+        (s.read("b3") {
+            r: IScribeReader -> MapScribeable(mapOf(
+                "_4" to r.read("_4", ::A),
+                "_5" to r.read("_5", ::A),
+                "_6" to r.readString("_6")
+                ))
+            } as MapScribeable).map
+        )
+
 }
-fun unscribeB(s: IScribeReader) = B(
-        s.read("b1", ::unscribeA) as? A,
-        s.readList("b2", ::unscribeA) as? List<A?>,
-        s.readMap("b3", ::unscribeA) as? Map<String, A?>
-)
 
 data class C(
         val c1: B? = null
@@ -57,7 +64,7 @@ data class C(
     }
 }
 fun unscribeC(s: IScribeReader) = C(
-        s.read("c1", ::unscribeB) as? B
+        s.read("c1", ::B) as? B
 )
 
 class ScriberUnitTest {
@@ -79,7 +86,7 @@ class ScriberUnitTest {
 
         // Reverse it!
         val reader = JsonScribeReader(json)
-        val reversed = reader.read("a", ::unscribeA)
+        val reversed = reader.read("a", ::A)
         assertEquals(reversed, a)
     }
 
@@ -115,7 +122,7 @@ class ScriberUnitTest {
 
         // Reverse it!
         val reader = JsonScribeReader(json)
-        val reversed = reader.read("bbbb", ::unscribeB)
+        val reversed = reader.read("bbbb", ::B)
         assertEquals(b, reversed)
     }
 

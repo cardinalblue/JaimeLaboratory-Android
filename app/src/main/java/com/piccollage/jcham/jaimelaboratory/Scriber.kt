@@ -8,7 +8,8 @@ val ScriberDefault: Scriber = { writer: IScribeWriter, scribeable: IScribeable? 
         scribeable?.scribe(writer)
     }
 typealias Unscriber = (IScribeReader) -> IScribeable?
-typealias ListUnscriber = (IScribeReader) -> List<Any?>
+
+// ====================================================================================
 
 interface IScribeWriter {
     fun write(key: String, value: Int?)
@@ -17,7 +18,6 @@ interface IScribeWriter {
     fun write(key: String, value: Boolean?)
     fun write(key: String, value: IScribeable?,       scriber: Scriber = ScriberDefault)
     fun write(key: String, value: List<Any?>?,        scriber: Scriber = ScriberDefault)
-    fun write(key: String, value: Map<String, Any?>?, scriber: Scriber = ScriberDefault)
 }
 interface IScribeReader {
     fun readInt(key: String): Int?
@@ -26,7 +26,6 @@ interface IScribeReader {
     fun readBoolean(key: String): Boolean?
     fun read(key: String,     unscriber: Unscriber): IScribeable?
     fun readList(key: String, unscriber: Unscriber): List<Any?>?
-    fun readMap(key: String,  unscriber: Unscriber): Map<String, Any?>?
 }
 
 class ListScribeable(val list: List<Any?>): IScribeable {
@@ -40,12 +39,10 @@ class ListScribeable(val list: List<Any?>): IScribeable {
                 is Boolean      -> s.write(key, value)
                 is IScribeable  -> s.write(key, value)
                 is List<Any?>   -> s.write(key, value)
-                is Map<*, *>    -> s.write(key, value as Map<String, Any?>)
                 else            -> s.write(key, value.toString())
             }
         }
     }
-    constructor(r: IScribeReader, unscriber: (IScribeReader) -> List<Any?>):
 }
 class MapScribeable(val map: Map<String, Any?>): IScribeable {
     override fun scribe(s: IScribeWriter) {
@@ -57,10 +54,10 @@ class MapScribeable(val map: Map<String, Any?>): IScribeable {
                 is Boolean     -> s.write(key, value)
                 is IScribeable -> s.write(key, value)
                 is List<Any?>  -> s.write(key, value)
-                is Map<*, *>   -> s.write(key, value as Map<String, Any?>)
                 else           -> s.write(key, value.toString())
             }
         }
     }
 }
+
 
