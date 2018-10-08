@@ -45,13 +45,13 @@ data class B(
     constructor(s: IScribeReader): this(
         s.read("b1", ::A) as? A,
         s.readList("b2", ::A) as? List<A?>,
-        (s.read("b3") {
-            r: IScribeReader -> MapScribeable(mapOf(
+        (s.read("b3") { r: IScribeReader ->
+            MapScribeable(mapOf(
                 "_4" to r.read("_4", ::A),
                 "_5" to r.read("_5", ::A),
                 "_6" to r.readString("_6")
                 ))
-            } as MapScribeable).map
+            } as? MapScribeable)?.map
         )
 
 }
@@ -144,6 +144,7 @@ class ScriberUnitTest {
         )
 
         // Reverse it!
+        println(">>>>>> ${json}")
         val reader = JsonScribeReader(json)
         val reversed = reader.read("cccc", ::unscribeC)
         assertEquals(c, reversed)

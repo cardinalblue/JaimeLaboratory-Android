@@ -146,7 +146,7 @@ class ScriberCollageUnitTest {
         ScriberReferencerWriter(writerJson).apply { write("the collage", c) }
         json = writerJson.result
         assertThat(json).isEqualToComparingFieldByFieldRecursively(jsonS)
-        println("Compared new JSON is ok!")
+        println("Compared new JSON is ok!!")
 
         // ---- Read from JSON what we wrote and compare to original
         val collageS2 = ScriberReferencerReader(JsonScribeReader(json)).read("the collage", ::Collage)
