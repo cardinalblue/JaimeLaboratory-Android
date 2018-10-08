@@ -80,12 +80,12 @@ class ScriberCollageUnitTest {
 
         // ---- Collage setup
         val c = Collage(Point(200f, 300f),
-                listOf<Scrap>(
+                    listOf<Scrap>(
                         TextScrap("t1", Point(100f, 120f), "Hello!"),
                         ImageScrap("i1", Point(110f, 190f), "image1.jpg"),
                         ImageScrap("i2", Point(250f, 220f), "image2.jpg")
-                )
-        )
+                        )
+                    )
         c.backgroundScrap = c.scraps[1]
 
         // ---- This is what the JSON output should look like
