@@ -1,8 +1,7 @@
 package com.piccollage.jcham.jaimelaboratory
 
-interface IScribeReferenceable {
+interface IScribeReferenceable: IScribeable {
     val reference: String?
-    fun dereference(r: String): IScribeable? = null
 }
 
 class ScriberReferencerWriter(
@@ -38,6 +37,39 @@ class ScriberReferencerWriter(
     }
     override fun write(key: String, value: List<Any?>?, scriber: Scriber) {
         inner.write(key, value, wrapScriber(scriber))
+    }
+
+}
+
+class ScriberReferencerReader(
+    private val inner: IScribeReader,
+    private val cache: MutableMap<String, IScribeReferenceable> = mutableMapOf()
+): IScribeReader by inner {
+
+    private fun wrapUnscriber(outer: Unscriber): Unscriber {
+        return fun(reader: IScribeReader): IScribeable? {
+            // See if has a reference
+            reader.readString("\$ref")?.iff { reference ->
+                // See if in cache
+                cache[reference]?.iff { return it }
+            }
+            // Otherwise, normal handling
+            return outer(ScriberReferencerReader(reader, cache)).also { scribeable ->
+                // If referenceable, save it to cache
+                (scribeable as? IScribeReferenceable)?.iff {
+                    scribeable.reference?.iff { reference ->
+                        cache[reference] = scribeable
+                    }
+                }
+            }
+        }
+    }
+
+    override fun read(key: String, unscriber: Unscriber): IScribeable? {
+        return inner.read(key, wrapUnscriber(unscriber))
+    }
+    override fun readList(key: String, unscriber: Unscriber): List<Any?>? {
+        return inner.readList(key, wrapUnscriber(unscriber))
     }
 
 }
