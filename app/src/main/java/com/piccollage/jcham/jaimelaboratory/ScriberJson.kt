@@ -1,12 +1,5 @@
 package com.piccollage.jcham.jaimelaboratory
 
-fun <T> MutableList<T>.removeLast(): T {
-    val i = count() - 1
-    val last: T = elementAt(i)
-    removeAt(i)
-    return last
-}
-
 class JsonScribeWriter: IScribeWriter {
     val result: MutableMap<String, Any?> = mutableMapOf<String, Any?>()
 
