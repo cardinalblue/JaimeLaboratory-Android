@@ -31,17 +31,21 @@ class JsonListScribeWriter: IScribeWriter {
     override fun write(key: String, value: Boolean?) {          result.add(value) }
     override fun write(key: String, value: IScribeable?, scriber: Scriber) {
         result.add(
-            value?.iff { JsonScribeWriter()
-                .apply { scriber(this, value) }
-                .result
-            })
+            value?.iff {
+                JsonScribeWriter()
+                    .apply { scriber(this, value) }
+                    .result
+            }
+        )
     }
     override fun write(key: String, value: List<Any?>?, scriber: Scriber) {
         result.add(
-            value?.iff { JsonListScribeWriter()
-                .apply { scriber(this, ListScribeable(value)) }
-                .result
-            })
+            value?.iff {
+                JsonListScribeWriter()
+                    .apply { scriber(this, ListScribeable(value)) }
+                    .result
+            }
+        )
     }
 }
 

@@ -56,10 +56,8 @@ class ScriberReferencerReader(
             // Otherwise, normal handling
             return outer(ScriberReferencerReader(reader, cache)).also { scribeable ->
                 // If referenceable, save it to cache
-                (scribeable as? IScribeReferenceable)?.iff {
-                    scribeable.reference?.iff { reference ->
-                        cache[reference] = scribeable
-                    }
+                (scribeable as? IScribeReferenceable)?.reference?.iff { reference ->
+                    cache[reference] = scribeable
                 }
             }
         }
